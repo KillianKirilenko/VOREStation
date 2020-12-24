@@ -173,19 +173,19 @@
 // Alcohol Traits Start Here, from negative to positive.
 /datum/trait/alcohol_intolerance_advanced
 	name = "Liver of Air"
-	desc = "The only way you can hold a drink is if it's in your own two hands, and even then you'd best not inhale too deeply near it. Drinks are three times as strong."
+	desc = "The only way you can hold a drink is if it's in your own two hands, and even then you'd best not inhale too deeply near it. Drinks are three times as strong. You should probably note this in your medical records."
 	cost = 0
 	var_changes = list("alcohol_mod" = 3) // 300% as effective if alcohol_mod is set to 1. If it's not 1 in species.dm, update this!
 
 /datum/trait/alcohol_intolerance_basic
 	name = "Liver of Lilies"
-	desc = "You have a hard time with alcohol. Maybe you just never took to it, or maybe it doesn't agree with you... either way, drinks are twice as strong."
+	desc = "You have a hard time with alcohol. Maybe you just never took to it, or maybe it doesn't agree with you... either way, drinks are twice as strong. You should probably note this in your medical records."
 	cost = 0
 	var_changes = list("alcohol_mod" = 2) // 200% as effective if alcohol_mod is set to 1. If it's not 1 in species.dm, update this!
 
 /datum/trait/alcohol_intolerance_slight
 	name = "Liver of Tulips"
-	desc = "You have a slight struggle with alcohol. Drinks are one and a half times stronger."
+	desc = "You are what many drinkers would consider 'a bit of a lightweight', perhaps to your own dismay. Drinks are one and a half times stronger. You should probably note this in your medical records."
 	cost = 0
 	var_changes = list("alcohol_mod" = 1.5) // 150% as effective if alcohol_mod is set to 1. If it's not 1 in species.dm, update this!
 
