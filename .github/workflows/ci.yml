@@ -8,28 +8,22 @@ env:
   BASENAME: "vorestation"
 
 jobs:
-
   run_linters:
+    if: ( !contains(github.event.head_commit.message, '[ci skip]') )
     name: Run Linters
     runs-on: ubuntu-24.04
-
+    concurrency:
+      group: run_linters-${{ github.head_ref || github.run_id }}
+      cancel-in-progress: true
     steps:
       - uses: actions/checkout@v4
+        with:
+            fetch-depth: 0
       # Caches
-      - name: Restore Yarn cache
-        uses: actions/cache@v4
+      - name: Setup Node
+        uses: ./.github/actions/setup_node
         with:
-          path: tgui/.yarn/cache
-          key: ${{ runner.os }}-yarn-${{ hashFiles('tgui/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-
-      - name: Restore Node cache
-        uses: actions/cache@v4
-        with:
-          path: ~/.nvm
-          key: ${{ runner.os }}-node-${{ hashFiles('dependencies.sh') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
+          restore-yarn-cache: true
       - name: Restore Bootstrap cache
         uses: actions/cache@v4
         with:
@@ -53,20 +47,26 @@ jobs:
       - name: Install Tools
         run: |
           pip3 install setuptools
-          bash tools/ci/install_node.sh
           bash tools/ci/install_ripgrep.sh
           bash tools/ci/install_spaceman_dmm.sh dmm-tools
           tools/bootstrap/python -c ''
-      - name: Run Grep Checks
-        run: tools/ci/validate_files.sh
+      - name: Run Validation Tests
+        run: bash tools/ci/validate_files.sh
       - name: Run Define Sanity Checks
         run: tools/bootstrap/python -m define_sanity.check
+      - name: Run DMI Tests
+        run: tools/bootstrap/python -m dmi.test
+      - name: Run Map Checks
+        run: |
+          tools/bootstrap/python -m tools.maplint.source
+          tools/bootstrap/python -m mapmerge2.dmm_test
       - name: Run TGUI Checks
         run: tools/build/build --ci lint tgui-test
       - name: Run Nanomap Checks
         run: tools/github-actions/nanomap-renderer-invoker.sh --testing
 
   dreamchecker:
+    if: ( !contains(github.event.head_commit.message, '[ci skip]') )
     name: DreamChecker
     runs-on: ubuntu-24.04
     steps:
@@ -111,6 +111,8 @@ jobs:
       - run: ./DMCompiler_linux-x64/DMCompiler --suppress-unimplemented vorestation.dme
 
   unit_tests:
+    timeout-minutes: 30
+    if: ( !contains(github.event.head_commit.message, '[ci skip]') )
     strategy:
       matrix:
         map: ['USE_MAP_TETHER', 'USE_MAP_STELLARDELIGHT', 'USE_MAP_GROUNDBASE']
@@ -123,11 +125,11 @@ jobs:
       - name: Ensure +x on CI directory
         run: |
           chmod -R +x ./tools/ci
-      - name: Restore BYOND Cache
-        uses: actions/cache@v4
+      - name: Restore BYOND from Cache
+        uses: ./.github/actions/restore_or_install_byond
         with:
-          path: $HOME/byond
-          key: ${{ runner.os }}-byond
+          major: ${{ inputs.major }}
+          minor: ${{ inputs.minor }}
       - name: Install RUST_G Dependencies
         run: |
           sudo dpkg --add-architecture i386
@@ -137,14 +139,13 @@ jobs:
           ldd libbapi_dmm_reader.so
           ldd libverdigris.so
       - name: Unit Tests
-        run: |
-          tools/ci/install_byond.sh
-          tools/ci/compile_and_run.sh
+        run: tools/ci/compile_and_run.sh
         env:
           EXTRA_ARGS: "-DUNIT_TEST -D${{ matrix.map }}"
           RUN: "1"
 
   extra_map_tests:
+    if: ( !contains(github.event.head_commit.message, '[ci skip]') )
     name: Map Tests
     runs-on: ubuntu-24.04
     steps:
@@ -171,6 +172,7 @@ jobs:
           RUN: "0"
 
   tests_successful:
+    if: ( !contains(github.event.head_commit.message, '[ci skip]') )
     name: Integration Tests
     needs: ['run_linters', 'dreamchecker', 'unit_tests', 'extra_map_tests']
     runs-on: ubuntu-24.04

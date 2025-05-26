@@ -18,7 +18,6 @@
 	var/languages=null
 	var/list/flavor=null
 	var/gender = null
-	var/list/body_descriptors = null // Guess we'll keep null.
 	var/list/genetic_modifiers = list() // Modifiers with the MODIFIER_GENETIC flag are saved.  Note that only the type is saved, not an instance.
 
 /datum/dna2/record/proc/GetData()
@@ -48,8 +47,6 @@
 	newrecord.implant = implant
 	newrecord.flavor = flavor
 	newrecord.gender = gender
-	if(body_descriptors)
-		newrecord.body_descriptors = body_descriptors.Copy()
 	newrecord.genetic_modifiers = genetic_modifiers.Copy()
 	return newrecord
 
@@ -75,7 +72,7 @@
 	var/scan_level
 	var/precision_coeff
 
-/obj/machinery/dna_scannernew/Initialize()
+/obj/machinery/dna_scannernew/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
 	RefreshParts()
@@ -227,7 +224,7 @@
 		WC.forceMove(get_turf(src))
 		occupant = null
 	// Disconnect from our terminal
-	for(var/dirfind in cardinal)
+	for(var/dirfind in GLOB.cardinal)
 		var/obj/machinery/computer/scan_consolenew/console = locate(/obj/machinery/computer/scan_consolenew, get_step(src, dirfind))
 		if(console && console.connected == src)
 			console.connected = null
@@ -357,7 +354,7 @@
 				return
 	return
 
-/obj/machinery/computer/scan_consolenew/Initialize()
+/obj/machinery/computer/scan_consolenew/Initialize(mapload)
 	. = ..()
 	for(var/i=0;i<3;i++)
 		// Traitgenes Use bodyrecords
@@ -368,7 +365,7 @@
 		R.mydna.dna.ResetSE()
 		buffers[i+1]=R
 	// Traitgenes don't alter direction of computer as this scans for neighbour
-	for(var/dirfind in cardinal)
+	for(var/dirfind in GLOB.cardinal)
 		connected = locate(/obj/machinery/dna_scannernew, get_step(src, dirfind))
 		if(connected)
 			break
@@ -467,19 +464,19 @@
 		occupantData["name"] = WC.real_name
 		occupantData["stat"] = WC.stat
 		occupantData["isViableSubject"] = 1
-		// Traitgenes NO_SCAN and Synthetics cannot be mutated
+		// Traitgenes NO_DNA and Synthetics cannot be mutated
 		var/allowed = TRUE
 		if(WC.isSynthetic())
 			allowed = FALSE
 		if(ishuman(WC))
 			var/mob/living/carbon/human/H = WC
-			if(!H.species || (H.species.flags & NO_SCAN))
+			if(!H.species || (H.species.flags & NO_DNA))
 				allowed = FALSE
 		if(!allowed || (NOCLONE in WC.mutations) || !WC.dna)
 			occupantData["isViableSubject"] = 0
 		occupantData["health"] = WC.health
-		occupantData["maxHealth"] = WC.maxHealth
-		occupantData["minHealth"] = CONFIG_GET(number/health_threshold_dead)
+		occupantData["maxHealth"] = WC.getMaxHealth()
+		occupantData["minHealth"] = -(WC.getMaxHealth())
 		occupantData["uniqueEnzymes"] = WC.dna.unique_enzymes
 		occupantData["uniqueIdentity"] = WC.dna.uni_identity
 		occupantData["structuralEnzymes"] = WC.dna.struc_enzymes
@@ -617,7 +614,6 @@
 							var/mob/living/carbon/human/H = WC
 							databuf.mydna.dna.real_name = H.dna.real_name
 							databuf.mydna.gender = H.gender
-							databuf.mydna.body_descriptors = H.descriptors
 						buffers[bufferId] = databuf
 					return TRUE
 				if("clear")
@@ -696,12 +692,12 @@
 			return TRUE
 
 /**
-  * Creates a blank injector with the name of the buffer at the given buffer_id
-  *
-  * Arguments:
-  * * buffer_id - The ID of the buffer
-  * * copy_buffer - Whether the injector should copy the buffer contents
-  */
+ * Creates a blank injector with the name of the buffer at the given buffer_id
+ *
+ * Arguments:
+ * * buffer_id - The ID of the buffer
+ * * copy_buffer - Whether the injector should copy the buffer contents
+ */
 /obj/machinery/computer/scan_consolenew/proc/create_injector(buffer_id, copy_buffer = FALSE)
 	if(buffer_id < 1 || buffer_id > length(buffers))
 		return
@@ -721,18 +717,18 @@
 	return I
 
 /**
-  * Called when the injector creation cooldown finishes
-  */
+ * Called when the injector creation cooldown finishes
+ */
 /obj/machinery/computer/scan_consolenew/proc/injector_cooldown_finish()
 	injector_ready = TRUE
 
 /**
-  * Called in tgui_act() to process modal actions
-  *
-  * Arguments:
-  * * action - The action passed by tgui
-  * * params - The params passed by tgui
-  */
+ * Called in tgui_act() to process modal actions
+ *
+ * Arguments:
+ * * action - The action passed by tgui
+ * * params - The params passed by tgui
+ */
 /obj/machinery/computer/scan_consolenew/proc/tgui_act_modal(action, params)
 	. = TRUE
 	var/id = params["id"] // The modal's ID
@@ -763,11 +759,11 @@
 
 
 /**
-  * Triggers sleeve growing in a clonepod within the area
-  *
-  * Arguments:
-  * * active_br - Body record to print
-  */
+ * Triggers sleeve growing in a clonepod within the area
+ *
+ * Arguments:
+ * * active_br - Body record to print
+ */
 /obj/machinery/computer/scan_consolenew/proc/print_sleeve(var/mob/user, var/datum/transhuman/body_record/active_br)
 	//deleted record
 	if(!istype(active_br))

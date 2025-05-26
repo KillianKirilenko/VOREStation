@@ -18,7 +18,7 @@
 		/obj/item/clothing/gloves/fingerless,
 		/obj/item/clothing/head/soft)
 
-/obj/structure/closet/secure_closet/cargotech/Initialize()
+/obj/structure/closet/secure_closet/cargotech/Initialize(mapload)
 	if(prob(75))
 		starts_with += /obj/item/storage/backpack
 	else
@@ -60,7 +60,7 @@
 		/obj/item/clothing/head/beret/qm,
 		/obj/item/clothing/shoes/boots/winter/supply)
 
-/obj/structure/closet/secure_closet/quartermaster/Initialize()
+/obj/structure/closet/secure_closet/quartermaster/Initialize(mapload)
 	if(prob(75))
 		starts_with += /obj/item/storage/backpack
 	else
@@ -89,9 +89,10 @@
 		/obj/item/clothing/suit/storage/hooded/wintercoat/miner,
 		/obj/item/clothing/shoes/boots/winter/mining,
 		/obj/item/emergency_beacon,
-		/obj/item/stack/marker_beacon/thirty)
+		/obj/item/stack/marker_beacon/thirty,
+		/obj/item/storage/sample_container)
 
-/obj/structure/closet/secure_closet/miner/Initialize()
+/obj/structure/closet/secure_closet/miner/Initialize(mapload)
 	if(prob(50))
 		starts_with += /obj/item/storage/backpack/industrial
 	else

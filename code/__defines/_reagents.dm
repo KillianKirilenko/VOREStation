@@ -69,6 +69,8 @@
 #define REAGENT_ID_POTASSIUM "potassium"
 #define REAGENT_RADIUM "Radium"
 #define REAGENT_ID_RADIUM "radium"
+#define REAGENT_CONCENTRATEDRADIUM "Concentrated Radium"
+#define REAGENT_ID_CONCENTRATEDRADIUM "concentrated_radium"
 #define REAGENT_SILICON "Silicon"
 #define REAGENT_ID_SILICON "silicon"
 #define REAGENT_SODIUM "Sodium"
@@ -81,10 +83,6 @@
 #define REAGENT_ID_TUNGSTEN "tungsten"
 #define REAGENT_NUTRIMENT "Nutriment"
 #define REAGENT_ID_NUTRIMENT "nutriment"
-#define REAGENT_STEEL "Liquid Steel"
-#define REAGENT_ID_STEEL "steel"
-#define REAGENT_PLASTEEL "Liquid Plasteel"
-#define REAGENT_ID_PLASTEEL "plasteel"
 
 
 // Xeno chem react
@@ -268,6 +266,8 @@
 #define REAGENT_ID_MENTHOL "menthol"
 #define REAGENT_EARTHSBLOOD "Earthsblood"
 #define REAGENT_ID_EARTHSBLOOD "earthsblood"
+#define REAGENT_ASUSTENANCE	"Artificial Sustenance"
+#define REAGENT_ID_ASUSTENANCE "a_sustenance"
 
 
 // Virology
@@ -1258,6 +1258,8 @@
 #define REAGENT_ID_PHORON "phoron"
 #define REAGENT_SPIDERTOXIN "Spidertoxin"
 #define REAGENT_ID_SPIDERTOXIN "spidertoxin"
+#define REAGENT_WARNINGTOXIN "Warningtoxin"
+#define REAGENT_ID_WARNINGTOXIN "warningtoxin"
 #define REAGENT_LEAD "Lead"
 #define REAGENT_ID_LEAD "lead"
 #define REAGENT_PLASTICIDE "Plasticide"
@@ -1302,6 +1304,8 @@
 #define REAGENT_ID_SIFSAP "sifsap"
 #define REAGENT_STOMACID "Digestive acid"
 #define REAGENT_ID_STOMACID "stomacid"
+#define REAGENT_DIETSTOMACID "Diluted digestive acid"
+#define REAGENT_ID_DIETSTOMACID "diet_stomacid"
 #define REAGENT_THERMITEV "Pyrotoxin"
 #define REAGENT_ID_THERMITEV "thermite_v"
 #define REAGENT_CONDENSEDCAPSAICINV "Irritant toxin"
