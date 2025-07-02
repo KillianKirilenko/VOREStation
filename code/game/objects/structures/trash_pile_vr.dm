@@ -44,6 +44,7 @@
 		"trashbag",
 		"brokecomp")
 	mouse_nest = new(src)
+	AddElement(/datum/element/climbable)
 
 /obj/structure/trash_pile/Destroy()
 	qdel(mouse_nest)
@@ -295,6 +296,7 @@
 					prob(3);/obj/item/clothing/accessory/knuckledusters,
 					prob(3);/obj/item/clothing/gloves/heavy_engineer,
 					prob(3);/obj/item/reagent_containers/syringe/drugs,
+					prob(3);/obj/item/reagent_containers/syringe/old,
 					prob(2);/obj/item/implanter/sizecontrol,
 					prob(2);/obj/item/handcuffs/fuzzy,
 					prob(2);/obj/item/handcuffs/legcuffs/fuzzy,
