@@ -267,9 +267,9 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
  * required is_bwoink boolean TRUE if this ticket was started by an admin PM
  * required level integer The level of the ticket. 0 = Admin, 1 = Mentor
  */
-/datum/ticket/New(msg, client/C, is_bwoink, ticket_level)
+/datum/ticket/New(raw_msg, client/C, is_bwoink, ticket_level)
 	//clean the input msg
-	msg = sanitize(copytext(msg,1,MAX_MESSAGE_LEN))
+	var/msg = sanitize(copytext(raw_msg,1,MAX_MESSAGE_LEN))
 	if(!msg || !C || !C.mob)
 		qdel(src)
 		return
@@ -319,15 +319,15 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 	var/list/activemins = adm["present"]
 	var activeMins = activemins.len
 	if(is_bwoink)
-		ahelp_discord_message("ADMINHELP: FROM: [key_name_admin(usr)] TO [initiator_ckey]/[initiator_key_name] - MSG: **[msg]** - Heard by [activeMins] NON-AFK staff members.")
+		ahelp_discord_message("[level == 0 ? "MENTORHELP" : "ADMINHELP"]: FROM: [key_name_admin(usr)] TO [initiator_ckey]/[initiator_key_name] - MSG: \n ```[raw_msg]``` \n Heard by [activeMins] NON-AFK staff members.")
 	else
-		ahelp_discord_message("ADMINHELP: FROM: [initiator_ckey]/[initiator_key_name] - MSG: **[msg]** - Heard by [activeMins] NON-AFK staff members.")
+		ahelp_discord_message("[level == 0 ? "MENTORHELP" : "ADMINHELP"]: FROM: [initiator_ckey]/[initiator_key_name] - MSG: \n ```[raw_msg]``` \n Heard by [activeMins] NON-AFK staff members.")
 
 		// Also send it to discord since that's the hip cool thing now.
 		SSwebhooks.send(
 			WEBHOOK_AHELP_SENT,
 			list(
-				"name" = "Ticket ([id]) (Game ID: [game_id]) ticket opened.",
+				"name" = "Ticket ([id]) (Round ID: [GLOB.round_id ? GLOB.round_id : "No database"]) ticket opened.",
 				"body" = "[key_name(initiator)] has opened a ticket. \n[msg]",
 				"color" = COLOR_WEBHOOK_POOR
 			)
@@ -351,18 +351,18 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 /datum/ticket/proc/AddInteraction(formatted_message)
 	var/curinteraction = "[gameTimestamp()]: [formatted_message]"
 	if(CONFIG_GET(flag/discord_ahelps_all))
-		ahelp_discord_message("ADMINHELP: TICKETID:[id] [strip_html_properly(curinteraction)]")
+		ahelp_discord_message("ADMINHELP: TICKETID: [id] [strip_html_properly(curinteraction)]")
 	_interactions += curinteraction
 
 /datum/ticket/proc/TicketPanel()
 	tgui_interact(usr.client.mob)
 
 //private
-/datum/ticket/proc/FullMonty(ref_src, admin = FALSE)
+/datum/ticket/proc/FullMonty(ref_src, admin_commands = FALSE)
 	if(!ref_src)
 		ref_src = "\ref[src]"
 	if(initiator && initiator.mob)
-		if(admin)
+		if(admin_commands)
 			. = ADMIN_FULLMONTY_NONAME(initiator.mob)
 	else
 		. = "Initiator disconnected."
@@ -404,22 +404,26 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 //won't bug irc
 /datum/ticket/proc/MessageNoRecipient(msg)
 	var/ref_src = "\ref[src]"
-	var/chat_msg = span_admin_pm_notice(span_adminhelp("Ticket [TicketHref("#[id]", ref_src)]") + span_bold(": [LinkedReplyName(ref_src)] [FullMonty(ref_src)]:") + msg)
 
 	AddInteraction(span_red("[LinkedReplyName(ref_src)]: [msg]"))
 	//send this msg to all admins
 
-	if(level == 0)
-		for (var/client/C in GLOB.admins)
-			if (C.prefs?.read_preference(/datum/preference/toggle/play_mentorhelp_ping))
-				C << 'sound/effects/mentorhelp.mp3'
-		message_mentors(chat_msg)
-	else if(level == 1)
-		for(var/client/X in GLOB.admins)
-			if(X.prefs?.read_preference(/datum/preference/toggle/holder/play_adminhelp_ping))
-				X << 'sound/effects/adminhelp.ogg'
-			window_flash(X)
-			to_chat(X, chat_msg)
+	switch(level)
+		if(0)
+			for (var/client/C in GLOB.admins)
+				var/chat_msg = span_mentor_channel(span_admin_pm_notice(span_adminhelp("Ticket [TicketHref("#[id]", ref_src)]") + span_bold(" (Mentor): [LinkedReplyName(ref_src)] [FullMonty(ref_src, check_rights_for(C, (R_ADMIN|R_SERVER|R_MOD)))]:") + msg))
+				if (C.prefs?.read_preference(/datum/preference/toggle/play_mentorhelp_ping))
+					C << 'sound/effects/mentorhelp.mp3'
+				to_chat(C, chat_msg)
+		if(1)
+			for(var/client/X in GLOB.admins)
+				var/chat_msg = span_admin_pm_notice(span_adminhelp("Ticket [TicketHref("#[id]", ref_src)] (Admin)") + span_bold(": [LinkedReplyName(ref_src)] [FullMonty(ref_src, check_rights_for(X, (R_ADMIN|R_SERVER|R_MOD)))]:") + msg)
+				if(!check_rights_for(X, R_HOLDER))
+					continue
+				if(X.prefs?.read_preference(/datum/preference/toggle/holder/play_adminhelp_ping))
+					X << 'sound/effects/adminhelp.ogg'
+				window_flash(X)
+				to_chat(X, chat_msg)
 
 /*
 //Reopen a closed ticket
@@ -471,7 +475,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 	SSwebhooks.send(
 		WEBHOOK_AHELP_SENT,
 		list(
-			"name" = "Ticket ([id]) (Game ID: [game_id]) reopened.",
+			"name" = "Ticket ([id]) (Round ID: [GLOB.round_id ? GLOB.round_id : "No database"]) reopened.",
 			"body" = "Reopened by [key_name(usr)]."
 		)
 	)
@@ -504,7 +508,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 		SSwebhooks.send(
 			WEBHOOK_AHELP_SENT,
 			list(
-				"name" = "Ticket ([id]) (Game ID: [game_id]) closed.",
+				"name" = "Ticket ([id]) (Round ID: [GLOB.round_id ? GLOB.round_id : "No database"]) closed.",
 				"body" = "Closed by [key_name(usr)].",
 				"color" = COLOR_WEBHOOK_BAD
 			)
@@ -535,7 +539,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 			SSwebhooks.send(
 				WEBHOOK_AHELP_SENT,
 				list(
-					"name" = "Ticket ([id]) (Game ID: [game_id]) resolved.",
+					"name" = "Ticket ([id]) (Round ID: [GLOB.round_id ? GLOB.round_id : "No database"]) resolved.",
 					"body" = "Marked as Resolved by [key_name(usr)].",
 					"color" = COLOR_WEBHOOK_GOOD
 				)
@@ -564,7 +568,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 	SSwebhooks.send(
 		WEBHOOK_AHELP_SENT,
 		list(
-			"name" = "Ticket ([id]) (Game ID: [game_id]) rejected.",
+			"name" = "Ticket ([id]) (Round ID: [GLOB.round_id ? GLOB.round_id : "No database"]) rejected.",
 			"body" = "Rejected by [key_name(usr)].",
 			"color" = COLOR_WEBHOOK_BAD
 		)
@@ -591,7 +595,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 	SSwebhooks.send(
 		WEBHOOK_AHELP_SENT,
 		list(
-			"name" = "Ticket ([id]) (Game ID: [game_id]) marked as IC issue.",
+			"name" = "Ticket ([id]) (Round ID: [GLOB.round_id ? GLOB.round_id : "No database"]) marked as IC issue.",
 			"body" = "Marked as IC Issue by [key_name(usr)].",
 			"color" = COLOR_WEBHOOK_BAD
 		)
@@ -625,7 +629,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 	SSwebhooks.send(
 		WEBHOOK_AHELP_SENT,
 		list(
-			"name" = "Ticket ([id]) (Game ID: [game_id]) being handled.",
+			"name" = "Ticket ([id]) (Round ID: [GLOB.round_id ? GLOB.round_id : "No database"]) being handled.",
 			"body" = "[key_name(usr)] is now handling the ticket."
 		)
 	)
@@ -650,6 +654,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 
 	level = level + 1
 
+	AddInteraction("[key_name_admin(usr)] escalated Ticket.")
 	message_mentors("[usr.ckey] escalated Ticket [TicketHref("#[id]")]")
 	log_admin("[key_name(usr)] escalated ticket [src.name]")
 	to_chat(src.initiator, span_mentor("[usr.ckey] escalated your ticket to admins."))
