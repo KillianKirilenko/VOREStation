@@ -276,7 +276,15 @@
 			unsaved_changes = TRUE
 			return TRUE
 		if("importpanel")
-			import_belly(host)
+			var/datum/vore_look/import_panel/importPanel
+			if(!importPanel)
+				importPanel = new(ui.user)
+
+			if(!importPanel)
+				to_chat(ui.user,span_notice("Import panel undefined: [importPanel]"))
+				return FALSE
+
+			importPanel.open_import_panel(ui.user)
 			return TRUE
 		if("bellypick")
 			host.vore_selected = locate(params["bellypick"])
@@ -636,7 +644,7 @@
 			return TRUE
 		//vore sprites color
 		if("set_belly_rub")
-			var/rub_target = params["val"]
+			var/rub_target = html_encode(params["val"])
 			if(rub_target == "Current Selected")
 				host.belly_rub_target = null
 			else
