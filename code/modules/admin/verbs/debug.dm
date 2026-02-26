@@ -437,14 +437,14 @@ ADMIN_VERB(cmd_assume_direct_control, (R_DEBUG|R_ADMIN|R_EVENT), "Assume Direct 
 
 	var/mob/living/carbon/human/H = target
 
-	var/decl/hierarchy/outfit/outfit = tgui_input_list(usr, "Select outfit.", "Select equipment.", outfits())
+	var/datum/decl/hierarchy/outfit/outfit = tgui_input_list(usr, "Select outfit.", "Select equipment.", outfits())
 	if(!outfit)
 		return
 
 	feedback_add_details("admin_verb","SEQ")
 	dressup_human(H, outfit, 1)
 
-/proc/dressup_human(var/mob/living/carbon/human/H, var/decl/hierarchy/outfit/outfit)
+/proc/dressup_human(var/mob/living/carbon/human/H, var/datum/decl/hierarchy/outfit/outfit)
 	if(!H || !outfit)
 		return
 	if(outfit.undress)
@@ -782,3 +782,8 @@ ADMIN_VERB(quick_nif, R_ADMIN, "Quick NIF", "Spawns a NIF into someone in quick-
 
 	log_and_message_admins("Quick NIF'd [H.real_name] with a [input_NIF].", user)
 	feedback_add_details("admin_verb","QNIF") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
+
+ADMIN_VERB(reload_configuration, R_DEBUG, "Reload Configuration", "Reloads the configuration from the default path on the disk, wiping any in-round modifications.", ADMIN_CATEGORY_DEBUG_SERVER)
+	if(tgui_alert(user, "Are you absolutely sure you want to reload the configuration from the default path on the disk, wiping any in-round modifications?", "Really reset?", list("No", "Yes")) != "Yes")
+		return
+	config.admin_reload()

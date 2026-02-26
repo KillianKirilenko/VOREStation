@@ -107,8 +107,9 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 
 //Destructor cleans up references
 /obj/item/nif/Destroy()
-	unregister_human()
-	human = null
+	if(human)
+		unregister_human()
+		human = null
 	QDEL_LIST_NULL(nifsofts)
 	QDEL_NULL(comm)
 	nifsofts_life.Cut()
@@ -184,7 +185,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 	update_icon()
 
 //EMP adds wear and disables all nifsoft
-/obj/item/nif/emp_act(var/severity)
+/obj/item/nif/emp_act(severity, recursive)
 	notify("Danger! Significant electromagnetic interference!",TRUE)
 	for(var/nifsoft in nifsofts)
 		if(nifsoft)
@@ -661,6 +662,13 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 		/datum/nifsoft/malware
 	)
 
+
+/obj/item/nif/glitch/bad
+	name = "odd NIF"
+	desc = "A NIF of a very dubious origin."
+	durability = 100
+	bioadap = FALSE
+
 ////////////////////////////////
 // Special Promethean """surgery"""
 /obj/item/nif/attack(mob/living/M, mob/living/user, var/target_zone)
@@ -681,7 +689,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 		U.visible_message(span_notice("[U] begins installing [src] into [T]'s chest by just stuffing it in."),
 		span_notice("You begin installing [src] into [T]'s chest by just stuffing it in."),
 		"There's a wet SQUISH noise.")
-		if(do_mob(user = user, target = T, time = 200, target_zone = BP_TORSO))
+		if(do_after(user, 20 SECONDS, T, target_zone = BP_TORSO))
 			user.unEquip(src)
 			forceMove(eo)
 			eo.implants |= src

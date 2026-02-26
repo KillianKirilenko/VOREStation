@@ -10,6 +10,9 @@
 	var/list/restricted_accessory_slots
 	var/list/starting_accessories
 
+	/// Trait modification, lazylist of traits to add/take away, on equipment/drop in the correct slot
+	var/list/clothing_traits
+
 	var/flash_protection = FLASH_PROTECTION_NONE
 	var/tint = TINT_NONE
 	var/list/enables_planes		//Enables these planes in the wearing mob's plane_holder
@@ -54,11 +57,16 @@
 	..()
 	if(enables_planes)
 		user.recalculate_vis()
+	if(("[slot]" in GLOB.slot_flags_enumeration) && (slot_flags & GLOB.slot_flags_enumeration["[slot]"]))
+		for(var/trait in clothing_traits)
+			ADD_CLOTHING_TRAIT(user, trait)
 
 /obj/item/clothing/dropped(mob/user)
 	..()
 	if(enables_planes)
 		user.recalculate_vis()
+	for(var/trait in clothing_traits)
+		REMOVE_CLOTHING_TRAIT(user, trait)
 
 //BS12: Species-restricted clothing check.
 /obj/item/clothing/mob_can_equip(M as mob, slot, disable_warning = FALSE)
@@ -89,7 +97,7 @@
 					wearable = FALSE
 
 				///Prevent us from from wearing clothing if we ARE a teshari or werebeast. This is due to these two having different anatomy that don't fix most clothing.
-				else if((our_species == SPECIES_TESHARI || our_species == SPECIES_WEREBEAST) && !sprite_sheets[our_species]) //teshari and werebeasts must have their own sprites. Vox can get away...somewhat
+				else if((our_species == SPECIES_TESHARI || our_species == SPECIES_WEREBEAST) && !LAZYACCESS(sprite_sheets, our_species)) //teshari and werebeasts must have their own sprites. Vox can get away...somewhat
 					wearable = FALSE
 				else
 					wearable = TRUE
@@ -338,13 +346,6 @@
 		var/mob/M = src.loc
 		M.update_inv_gloves()
 
-/obj/item/clothing/gloves/emp_act(severity)
-	if(cell)
-		cell.emp_act(severity)
-	if(ring)
-		ring.emp_act(severity)
-	..()
-
 // Called just before an attack_hand(), in mob/UnarmedAttack()
 /obj/item/clothing/gloves/proc/Touch(var/atom/A, var/proximity)
 	return 0 // return 1 to cancel attack_hand()
@@ -477,16 +478,20 @@
 		)
 	drop_sound = 'sound/items/drop/hat.ogg'
 	pickup_sound = 'sound/items/pickup/hat.ogg'
+	helmet_handling = TRUE
 
-/obj/item/clothing/head/attack_self(mob/user)
+/obj/item/clothing/head/attack_self(mob/user, callback)
+	. = ..(user)
+	if(.)
+		return TRUE
+	if(special_handling && !callback)
+		return FALSE
 	if(light_range)
 		if(!isturf(user.loc))
 			to_chat(user, "You cannot toggle the light while in this [user.loc]")
 			return
 		update_flashlight(user)
 		to_chat(user, "You [light_on ? "enable" : "disable"] the helmet light.")
-	else
-		return ..(user)
 
 /obj/item/clothing/head/proc/update_flashlight(var/mob/user = null)
 	set_light_on(!light_on)
@@ -736,7 +741,7 @@
 	if(holding)
 		add_overlay("[icon_state]_knife")
 	if(contaminated)
-		add_overlay(contamination_overlay)
+		add_overlay(GLOB.contamination_overlay)
 	if(gurgled) //VOREStation Edit Start
 		wash(CLEAN_ALL)
 		gurgle_contaminate() //VOREStation Edit End
@@ -854,15 +859,16 @@
 		var/mob/M = src.loc
 		M.update_inv_shoes()
 
-/obj/item/clothing/shoes/attack_self(var/mob/user)
+/obj/item/clothing/shoes/attack_self(mob/user)
+	. = ..(user)
+	if(.)
+		return TRUE
 	for(var/mob/M in src)
 		if(isvoice(M)) //Don't knock voices out!
 			continue
 		M.forceMove(get_turf(user))
 		to_chat(M, span_warning("[user] shakes you out of \the [src]!"))
 		to_chat(user, span_notice("You shake [M] out of \the [src]!"))
-
-	..()
 
 /obj/item/clothing/shoes/container_resist(mob/living/micro)
 	var/mob/living/carbon/human/macro = loc
@@ -1165,13 +1171,13 @@
 	var/mob/living/carbon/human/H = loc
 	sensorpref = isnull(H) ? 1 : (ishuman(H) ? H.sensorpref : 1)
 	switch(sensorpref)
-		if(1) sensor_mode = 0				//Sensors off
-		if(2) sensor_mode = 1				//Sensors on binary
-		if(3) sensor_mode = 2				//Sensors display vitals
-		if(4) sensor_mode = 3				//Sensors display vitals and enables tracking
-		if(5) sensor_mode = pick(0,1,2,3)	//Select a random setting
+		if(1) sensor_mode = SUIT_SENSOR_OFF			//Sensors off
+		if(2) sensor_mode = SUIT_SENSOR_BINARY		//Sensors on binary
+		if(3) sensor_mode = SUIT_SENSOR_VITAL		//Sensors display vitals
+		if(4) sensor_mode = SUIT_SENSOR_TRACKING	//Sensors display vitals and enables tracking
+		if(5) sensor_mode = pick(SUIT_SENSOR_OFF, SUIT_SENSOR_BINARY, SUIT_SENSOR_VITAL, SUIT_SENSOR_TRACKING)	//Select a random setting
 		else
-			sensor_mode = pick(0,1,2,3)
+			sensor_mode = pick(SUIT_SENSOR_OFF, SUIT_SENSOR_BINARY, SUIT_SENSOR_VITAL, SUIT_SENSOR_TRACKING)
 			log_runtime("Invalid switch for suit sensors, defaulting to random. [sensorpref] chosen")
 
 /obj/item/clothing/under/proc/update_rolldown_status()
@@ -1252,22 +1258,32 @@
 		to_chat(user, "This suit does not have any sensors.")
 		return 0
 
-	var/list/modes = list("Off", "Binary sensors", "Vitals tracker", "Tracking beacon")
-	var/switchMode = tgui_input_list(user, "Select a sensor mode:", "Suit Sensor Mode", modes)
+	var/list/modes = list(
+		"Off" = SUIT_SENSOR_OFF,
+		"Binary sensors" = SUIT_SENSOR_BINARY,
+		"Vitals tracker" = SUIT_SENSOR_VITAL,
+		"Tracking beacon" = SUIT_SENSOR_TRACKING
+		)
+	var/default_choice
+	for(var/key, value in modes)
+		if(value == sensor_mode)
+			default_choice = key
+			break
+	var/switchMode = tgui_input_list(user, "Select a sensor mode:", "Suit Sensor Mode", modes, default_choice)
 	if(get_dist(user, src) > 1)
 		to_chat(user, "You have moved too far away.")
 		return
-	sensor_mode = modes.Find(switchMode) - 1
+	sensor_mode = modes[switchMode]
 
 	if (src.loc == user)
 		switch(sensor_mode)
-			if(0)
+			if(SUIT_SENSOR_OFF)
 				user.visible_message("[user] adjusts their sensors.", "You disable your suit's remote sensing equipment.")
-			if(1)
+			if(SUIT_SENSOR_BINARY)
 				user.visible_message("[user] adjusts their sensors.", "Your suit will now report whether you are live or dead.")
-			if(2)
+			if(SUIT_SENSOR_VITAL)
 				user.visible_message("[user] adjusts their sensors.", "Your suit will now report your vital lifesigns.")
-			if(3)
+			if(SUIT_SENSOR_TRACKING)
 				user.visible_message("[user] adjusts their sensors.", "Your suit will now report your vital lifesigns as well as your coordinate position.")
 
 	else if (istype(src.loc, /mob))
@@ -1384,7 +1400,7 @@
 
 				// only override icon if a corresponding digitigrade replacement icon_state exists
 				// otherwise, keep the old non-digi icon_define (or nothing)
-				if(icon_state && cached_icon_states(update_icon_define_digi):Find(icon_state)) //Unsure what to do to this seeing as it does :Find()
+				if(icon_state && icon_states_fast(update_icon_define_digi):Find(icon_state)) //Unsure what to do to this seeing as it does :Find()
 					update_icon_define = update_icon_define_digi
 
 
@@ -1412,3 +1428,23 @@
 /obj/item/clothing/under/equipped(var/mob/user, var/slot)
 	. = ..()
 	handle_digitigrade(user)
+
+/obj/item/clothing/proc/attach_clothing_traits(trait_or_traits)
+	if(!islist(trait_or_traits))
+		trait_or_traits = list(trait_or_traits)
+
+	LAZYOR(clothing_traits, trait_or_traits)
+	var/mob/wearer = loc
+	if(istype(wearer) && (wearer.get_inventory_slot(src) & slot_flags))
+		for(var/new_trait in trait_or_traits)
+			ADD_CLOTHING_TRAIT(wearer, new_trait)
+
+/obj/item/clothing/proc/detach_clothing_traits(trait_or_traits)
+	if(!islist(trait_or_traits))
+		trait_or_traits = list(trait_or_traits)
+
+	LAZYREMOVE(clothing_traits, trait_or_traits)
+	var/mob/wearer = loc
+	if(istype(wearer))
+		for(var/new_trait in trait_or_traits)
+			REMOVE_CLOTHING_TRAIT(wearer, new_trait)

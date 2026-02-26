@@ -40,12 +40,12 @@
 	icon = 'icons/turf/outdoors.dmi'
 	name = "grass"
 	icon_state = "grass0"
-	initial_flooring = /decl/flooring/grass/outdoors
+	initial_flooring = /datum/decl/flooring/grass/outdoors
 
 /turf/simulated/floor/smole/desert
 	icon = 'icons/turf/desert.dmi'
 	icon_state = "desert"
-	initial_flooring = /decl/flooring/sand/desert
+	initial_flooring = /datum/decl/flooring/sand/desert
 
 /turf/simulated/floor/smole/megablocks
 	name = "block floor"
@@ -397,15 +397,7 @@
 	icon_state = "tether_trash"
 	name = "tether"
 	desc = "Its a tiny bit of plastic in the shape of the tether. There seems to be a small button on top."
-
-/obj/item/bikehorn/tinytether/attack_self(mob/user as mob)
-	if(spam_flag == 0)
-		spam_flag = 1
-		playsound(src, 'sound/items/tinytether.ogg', 30, 1, volume_channel = VOLUME_CHANNEL_MASTER)
-		src.add_fingerprint(user)
-		spawn(20)
-			spam_flag = 0
-	return
+	honk_sound = 'sound/items/tinytether.ogg'
 
 /obj/item/reagent_containers/food/snacks/snackplanet/moon
 	name = "moon"

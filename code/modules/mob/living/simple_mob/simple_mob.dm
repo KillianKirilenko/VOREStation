@@ -17,6 +17,8 @@
 
 	has_huds = TRUE // We do show AI status huds for buildmode players
 
+	digest_leave_remains = TRUE
+
 	var/tt_desc = null //Tooltip description
 
 	//Settings for played mobs
@@ -61,7 +63,7 @@
 	var/harm_intent_damage = 3		// How much an unarmed harm click does to this mob.
 	var/list/loot_list = list()		// The list of lootable objects to drop, with "/path = prob%" structure
 	var/obj/item/card/id/myid// An ID card if they have one to give them access to stuff.
-	var/organ_names = /decl/mob_organ_names //'False' bodyparts that can be shown as hit by projectiles in place of the default humanoid bodyplan.
+	var/organ_names = /datum/decl/mob_organ_names //'False' bodyparts that can be shown as hit by projectiles in place of the default humanoid bodyplan.
 
 	//Mob environment settings
 	var/minbodytemp = 250			// Minimum "okay" temperature in kelvin
@@ -139,15 +141,6 @@
 				"bomb" = 0,
 				"bio" = 100,
 				"rad" = 100
-				)
-	var/list/armor_soak = list(		// Values for getsoak() checks.
-				"melee" = 0,
-				"bullet" = 0,
-				"laser" = 0,
-				"energy" = 0,
-				"bomb" = 0,
-				"bio" = 0,
-				"rad" = 0
 				)
 	// Protection against heat/cold/electric/water effects.
 	// 0 is no protection, 1 is total protection. Negative numbers increase vulnerability.
@@ -403,7 +396,7 @@
 		return TRUE
 	return ..()
 
-/decl/mob_organ_names
+/datum/decl/mob_organ_names
 	var/list/hit_zones = list("body") //When in doubt, it's probably got a body.
 
 /*
@@ -424,11 +417,11 @@
 	set category = "Abilities.Settings"
 	set desc = "Allows to recolour once."
 
-	if(!has_recoloured)
-		var/datum/ColorMate/recolour = new /datum/ColorMate(src)
-		recolour.tgui_interact(src)
+	if(has_recoloured)
+		to_chat(src, "You've already recoloured yourself once. You are only allowed to recolour yourself once during a around.")
 		return
-	to_chat(src, "You've already recoloured yourself once. You are only allowed to recolour yourself once during a around.")
+
+	tgui_input_colormatrix(src, "Allows you to recolor yourself", "Animal Recolor", src, ui_state = GLOB.tgui_conscious_state)
 
 //Thermal vision adding
 
@@ -480,3 +473,7 @@
 		to_chat(src,span_warning("Vore sprite enabled."))
 
 	update_icon()
+
+/// Simple mob slip logic, should be overriden if you want the simple mob to slip under certain conditions
+/mob/living/simple_mob/proc/animal_slip(wet_level, dirtslip)
+	return FALSE

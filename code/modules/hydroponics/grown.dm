@@ -13,6 +13,7 @@
 	var/plantname
 	var/datum/seed/seed
 	var/potency = -1
+	special_handling = TRUE
 
 
 /obj/item/reagent_containers/food/snacks/grown/Initialize(mapload, var/planttype)
@@ -54,8 +55,8 @@
 					rtotal += round(potency/reagent_data[2])
 				if(rid == REAGENT_ID_NUTRIMENT)
 					data[seed.seed_name] = max(1,rtotal)
-
-				reagents.add_reagent(rid,max(1,rtotal),data)
+				if(rid != REAGENT_ID_GLAMOUR_INVIS)
+					reagents.add_reagent(rid,max(1,rtotal),data)
 		update_desc()
 		if(reagents.total_volume > 0)
 			bitesize = 1+round(reagents.total_volume / 2, 1)
@@ -273,8 +274,10 @@
 				user.drop_from_inventory(src)
 			qdel(src)
 
-/obj/item/reagent_containers/food/snacks/grown/attack_self(mob/user as mob)
-
+/obj/item/reagent_containers/food/snacks/grown/attack_self(mob/user)
+	. = ..(user)
+	if(.)
+		return TRUE
 	if(!seed)
 		return
 

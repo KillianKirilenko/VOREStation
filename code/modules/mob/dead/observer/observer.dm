@@ -183,6 +183,7 @@ Works together with spawning an observer, noted above.
 //RS Port #658 End
 
 /mob/proc/ghostize(var/can_reenter_corpse = 1, var/aghost = FALSE)
+	reset_perspective(src) // End any remoteview we're in
 	if(key)
 		if(ishuman(src))
 			var/mob/living/carbon/human/H = src
@@ -245,8 +246,8 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 
 /mob/observer/dead/get_status_tab_items()
 	. = ..()
-	if(emergency_shuttle)
-		var/eta_status = emergency_shuttle.get_status_panel_eta()
+	if(GLOB.emergency_shuttle)
+		var/eta_status = GLOB.emergency_shuttle.get_status_panel_eta()
 		if(eta_status)
 			. += ""
 			. += "[eta_status]"
@@ -554,6 +555,8 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	GLOB.observer_mob_list -= src
 	for(var/datum/chunk/ghost/ghost_chunks in visibleChunks)
 		ghost_chunks.remove(src)
+	if(key)
+		key = null
 	return ..()
 
 /mob/Moved(atom/old_loc, direction, forced = FALSE)
@@ -572,7 +575,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	if(check_rights_for(src.client, R_ADMIN|R_FUN|R_EVENT))
 		return 0
 
-	return (T && T.holy) && (is_manifest || (mind in cult.current_antagonists))
+	return (T && T.holy) && (is_manifest || (mind in GLOB.cult.current_antagonists))
 
 /mob/observer/dead/verb/jumptomob() //Moves the ghost instead of just changing the ghosts's eye -Nodrak
 	set category = "Ghost.Game"
@@ -684,7 +687,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 
 	var/ghosts_can_write
 	if(SSticker.mode.name == "cult")
-		if(cult.current_antagonists.len > CONFIG_GET(number/cult_ghostwriter_req_cultists))
+		if(GLOB.cult.current_antagonists.len > CONFIG_GET(number/cult_ghostwriter_req_cultists))
 			ghosts_can_write = 1
 
 	if(!ghosts_can_write && !check_rights(R_ADMIN|R_EVENT|R_FUN, 0)) //Let's allow for admins to write in blood for events and the such.
@@ -762,9 +765,8 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 		)
 		toggle_ghost_visibility(TRUE)
 	else
-		var/datum/gender/T = GLOB.gender_datums[user.get_visible_gender()]
 		user.visible_message ( \
-			span_warning("\The [user] just tried to smash [T.his] book into that ghost!  It's not very effective."), \
+			span_warning("\The [user] just tried to smash [user.p_their()] book into that ghost!  It's not very effective."), \
 			span_warning("You get the feeling that the ghost can't become any more visible.") \
 		)
 
@@ -997,7 +999,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 	if(message)
 		to_chat(src, span_ghostalert(span_huge("[message]")))
 		if(source)
-			throw_alert("\ref[source]_notify_revive", /obj/screen/alert/notify_cloning, new_master = source)
+			throw_alert("\ref[source]_notify_revive", /atom/movable/screen/alert/notify_cloning, new_master = source)
 	to_chat(src, span_ghostalert("<a href='byond://?src=[REF(src)];reenter=1'>(Click to re-enter)</a>"))
 	if(sound)
 		SEND_SOUND(src, sound(sound))

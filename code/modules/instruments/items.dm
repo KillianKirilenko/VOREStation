@@ -36,11 +36,14 @@
 		return FALSE
 	return TRUE
 
-/obj/item/instrument/attack_self(mob/M)
-	if(!M.IsAdvancedToolUser())
+/obj/item/instrument/attack_self(mob/user)
+	. = ..(user)
+	if(.)
+		return TRUE
+	if(!user.IsAdvancedToolUser())
 		return
 
-	tgui_interact(M)
+	tgui_interact(user)
 
 /obj/item/instrument/tgui_interact(mob/user, datum/tgui/ui)
 	return song.tgui_interact(user)
@@ -252,3 +255,11 @@
 	w_class = ITEMSIZE_SMALL
 	force = 0
 	hitsound = 'sound/voice/moth/scream_moth.ogg'
+
+//////////////Fluff items
+
+/obj/item/instrument/recorder/fluff_tief
+	name = "flute"
+	desc = "A blue wooden flute."
+	icon_state = "flute_tief"
+	allowed_instrument_ids = "recorder"

@@ -304,6 +304,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 
 /obj/machinery/light/small/emergency
 	light_type = /obj/item/light/bulb/red
+	nightshift_allowed = FALSE
 
 /obj/machinery/light/small/emergency/flicker
 	auto_flicker = TRUE
@@ -779,7 +780,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
-		if(H.species.can_shred(H))
+		if(H.species.can_shred(H, FALSE, 10))
 			user.setClickCooldown(user.get_attack_speed())
 			for(var/mob/M in viewers(src))
 				M.show_message(span_red("[user.name] smashed the light!"), 3, "You hear a tinkle of breaking glass", 2)
@@ -851,7 +852,7 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 
 // break the light and make sparks if was on
 
-/obj/machinery/light/proc/broken(var/skip_sound_and_sparks = 0)
+/obj/machinery/light/proc/broken(var/skip_sound_and_sparks = FALSE)
 	if(status == LIGHT_EMPTY)
 		return
 
@@ -999,6 +1000,8 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 /obj/item/light/tube/large
 	w_class = ITEMSIZE_SMALL
 	name = "large light tube"
+	icon_state = "ltube_large"
+	base_state = "ltube_large"
 	brightness_range = 15
 	brightness_power = 4
 
@@ -1032,6 +1035,8 @@ GLOBAL_LIST_EMPTY(light_type_cache)
 // For 'floor lamps' in outdoor use and such
 /obj/item/light/bulb/large
 	name = "large light bulb"
+	icon_state = "lbulb_large"
+	base_state = "lbulb_large"
 	brightness_range = 7
 	brightness_power = 1.5
 

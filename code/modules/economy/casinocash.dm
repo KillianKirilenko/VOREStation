@@ -83,14 +83,14 @@
 			var/image/banknote = image('icons/obj/casino.dmi', "spacecasinocash[i]")
 			var/matrix/M = matrix()
 			M.Translate(rand(-6, 6), rand(-4, 8))
-			M.Turn(pick(-45, -27.5, 0, 0, 0, 0, 0, 0, 0, 27.5, 45))
+			M.Turn(pick(-45, 0, 0, 0, 0, 0, 0, 0, 45))
 			banknote.transform = M
 			src.overlays += banknote
 	if(num == 0) // Less than one credit, let's just make it look like 1 for ease
 		var/image/banknote = image('icons/obj/casino.dmi', "spacecasinocash1")
 		var/matrix/M = matrix()
 		M.Translate(rand(-6, 6), rand(-4, 8))
-		M.Turn(pick(-45, -27.5, 0, 0, 0, 0, 0, 0, 0, 27.5, 45))
+		M.Turn(pick(-45, 0, 0, 0, 0, 0, 0, 0, 45))
 		banknote.transform = M
 		src.overlays += banknote
 	src.desc = "They are worth [worth] casino credits."
@@ -112,6 +112,9 @@
 	return worth
 
 /obj/item/spacecasinocash/attack_self(mob/user)
+	. = ..(user)
+	if(.)
+		return TRUE
 	var/amount = tgui_input_number(user, "How much credits worth of chips do you want to take? (0 to [src.worth])", "Take chips", 20, src.worth)
 	if(!src || QDELETED(src))
 		return
@@ -196,7 +199,10 @@
 	throw_range = 2
 	w_class = ITEMSIZE_SMALL
 
-/obj/item/casino_platinum_chip/attack_self(mob/user as mob)
+/obj/item/casino_platinum_chip/attack_self(mob/user)
+	. = ..(user)
+	if(.)
+		return TRUE
 	var/result = rand(1, sides)
 	var/comment = ""
 	if(result == 1)
@@ -258,14 +264,14 @@
 			var/image/banknote = image('icons/obj/casino.dmi', "spacecasinocash[i]")
 			var/matrix/M = matrix()
 			M.Translate(rand(-6, 6), rand(-4, 8))
-			M.Turn(pick(-45, -27.5, 0, 0, 0, 0, 0, 0, 0, 27.5, 45))
+			//M.Turn(pick(-45, 0, 0, 0, 0, 0, 0, 0, 45))
 			banknote.transform = M
 			src.overlays += banknote
 	if(num == 0) // Less than one credit, let's just make it look like 1 for ease
 		var/image/banknote = image('icons/obj/casino.dmi', "spacecasinocash1")
 		var/matrix/M = matrix()
 		M.Translate(rand(-6, 6), rand(-4, 8))
-		M.Turn(pick(-45, -27.5, 0, 0, 0, 0, 0, 0, 0, 27.5, 45))
+		//M.Turn(pick(-45, 0, 0, 0, 0, 0, 0, 0, 45))
 		banknote.transform = M
 		src.overlays += banknote
 	src.desc = "They are worth [worth] replica casino credits."
@@ -287,6 +293,9 @@
 	return worth
 
 /obj/item/spacecasinocash_fake/attack_self(mob/user)
+	. = ..(user)
+	if(.)
+		return TRUE
 	var/amount = tgui_input_number(user, "How much credits worth of chips do you want to take? (0 to [src.worth])", "Take chips", 20, src.worth)
 	if(!src || QDELETED(src))
 		return

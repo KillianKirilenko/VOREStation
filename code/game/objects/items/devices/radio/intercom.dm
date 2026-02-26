@@ -170,7 +170,7 @@
 			return -1
 	if (!src.listening)
 		return -1
-	if(freq in ANTAG_FREQS)
+	if(freq in GLOB.antag_frequencies)
 		if(!(src.syndie))
 			return -1//Prevents broadcast of messages over devices lacking the encryption
 
@@ -202,7 +202,7 @@
 			set_light_on(TRUE)
 
 //VOREStation Add Start
-/obj/item/radio/intercom/AICtrlClick(var/mob/user)
+/obj/item/radio/intercom/ctrl_click_ai(var/mob/user)
 	ToggleBroadcast()
 	to_chat(user, span_notice("\The [src]'s microphone is now <b>[broadcasting ? "enabled" : "disabled"]</b>."))
 

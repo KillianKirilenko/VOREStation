@@ -35,7 +35,7 @@ var/list/mining_overlay_cache = list()
 	var/rock_icon_path = 'icons/turf/walls.dmi' // Override this on a subtype turf if you want a custom icon
 	var/random_icon = 0
 
-	var/ore/mineral
+	var/datum/ore/mineral
 	var/sand_dug
 	var/mined_ore = 0
 	var/last_act = 0
@@ -663,6 +663,9 @@ var/list/mining_overlay_cache = list()
 			M.make_jittery(50) //SHAKY this used to be 1000(seizure) but I toned it to 50 to be less aggressive.
 		if(prob(25))
 			excavate_find(prob(25), finds[1])
+		if(prob(2))
+			var/anomaly = pick(FLUX_ANOMALY, GRAVITATIONAL_ANOMALY, PYRO_ANOMALY, HALLUCINATION_ANOMALY)
+			generate_anomaly(get_turf(src), anomaly, 1, FALSE)
 	else if(rand(1,500) == 1)
 		visible_message(span_notice("An old dusty crate was buried within!"))
 		new /obj/structure/closet/crate/secure/loot(src)

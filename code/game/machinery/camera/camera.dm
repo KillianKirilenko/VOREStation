@@ -92,8 +92,8 @@
 /obj/machinery/camera/proc/internal_process()
 	return
 
-/obj/machinery/camera/emp_act(severity)
-	if(!isEmpProof() && prob(100/severity))
+/obj/machinery/camera/emp_act(severity, recursive, forced)
+	if(!isEmpProof() && (forced || prob(100/severity)))
 		if(!affected_by_emp_until || (world.time > affected_by_emp_until))
 			affected_by_emp_until = max(affected_by_emp_until, world.time + (90 SECONDS / severity))
 			stat |= EMPED
@@ -121,7 +121,7 @@
 		return
 	destroy()
 
-/obj/machinery/camera/hitby(atom/movable/source)
+/obj/machinery/camera/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	..()
 	if (!isobj(source))
 		return
@@ -138,7 +138,7 @@
 	if(!istype(user))
 		return
 
-	if(user.species.can_shred(user))
+	if(user.species.can_shred(user, FALSE, 11))
 		set_status(0)
 		user.do_attack_animation(src)
 		user.setClickCooldown(user.get_attack_speed())
@@ -300,11 +300,6 @@
 		status = newstatus
 		update_coverage()
 
-/obj/machinery/camera/check_eye(mob/user)
-	if(!can_use()) return -1
-	if(isXRay()) return SEE_TURFS|SEE_MOBS|SEE_OBJS
-	return 0
-
 /obj/machinery/camera/update_icon()
 	if (!status || (stat & BROKEN))
 		icon_state = "[initial(icon_state)]1"
@@ -315,14 +310,14 @@
 
 /obj/machinery/camera/proc/triggerCameraAlarm(var/duration = 0)
 	alarm_on = 1
-	camera_alarm.triggerAlarm(loc, src, duration)
+	GLOB.camera_alarm.triggerAlarm(loc, src, duration)
 
 /obj/machinery/camera/proc/cancelCameraAlarm()
 	if(wires.is_cut(WIRE_CAM_ALARM))
 		return
 
 	alarm_on = 0
-	camera_alarm.clearAlarm(loc, src)
+	GLOB.camera_alarm.clearAlarm(loc, src)
 
 //if false, then the camera is listed as DEACTIVATED and cannot be used
 /obj/machinery/camera/proc/can_use()
@@ -407,7 +402,6 @@
 		to_chat(user, span_warning("\The [src] is broken."))
 		return
 
-	user.set_machine(src)
 	wires.Interact(user)
 
 /obj/machinery/camera/proc/add_network(var/network_name)
@@ -468,7 +462,7 @@
 
 /obj/machinery/camera/proc/update_coverage(var/network_change = 0)
 	if(network_change)
-		var/list/open_networks = difflist(network, restricted_camera_networks)
+		var/list/open_networks = difflist(network, GLOB.restricted_camera_networks)
 		// Add or remove camera from the camera net as necessary
 		if(on_open_network && !open_networks.len)
 			cameranet.removeCamera(src)

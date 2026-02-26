@@ -189,10 +189,10 @@
 	base_icon = "psychbed"
 
 /obj/structure/bed/psych/Initialize(mapload)
-	. = ..(mapload,MAT_WOOD,MAT_LEATHER)
+	. = ..(mapload, MAT_WOOD, MAT_LEATHER)
 
 /obj/structure/bed/padded/Initialize(mapload)
-	. = ..(mapload,MAT_PLASTIC,MAT_COTTON)
+	. = ..(mapload, MAT_PLASTIC, MAT_CLOTH)
 
 /obj/structure/bed/double
 	name = "double bed"
@@ -200,7 +200,7 @@
 	base_icon = "doublebed"
 
 /obj/structure/bed/double/padded/Initialize(mapload)
-	. = ..(mapload,MAT_WOOD,MAT_COTTON)
+	. = ..(mapload, MAT_WOOD, MAT_CLOTH)
 
 /obj/structure/bed/double/post_buckle_mob(mob/living/M as mob)
 	if(M.buckled == src)
@@ -219,7 +219,7 @@
 	icon = 'icons/obj/rollerbed.dmi'
 	icon_state = "rollerbed"
 	anchored = FALSE
-	surgery_odds = 50 //VOREStation Edit
+	surgery_cleanliness = 60
 	var/bedtype = /obj/structure/bed/roller
 	var/rollertype = /obj/item/roller
 	flippable = FALSE
@@ -227,6 +227,7 @@
 /obj/structure/bed/roller/adv
 	name = "advanced roller bed"
 	icon_state = "rollerbedadv"
+	surgery_cleanliness = 75
 	bedtype = /obj/structure/bed/roller/adv
 	rollertype = /obj/item/roller/adv
 
@@ -263,6 +264,9 @@
 	pickup_sound = 'sound/items/pickup/axe.ogg'
 
 /obj/item/roller/attack_self(mob/user)
+	. = ..(user)
+	if(.)
+		return TRUE
 	var/obj/structure/bed/roller/R = new bedtype(user.loc)
 	R.add_fingerprint(user)
 	qdel(src)
@@ -298,8 +302,10 @@
 	. = ..()
 	held = new /obj/item/roller(src)
 
-/obj/item/roller_holder/attack_self(mob/user as mob)
-
+/obj/item/roller_holder/attack_self(mob/user)
+	. = ..(user)
+	if(.)
+		return TRUE
 	if(!held)
 		to_chat(user, span_notice("The rack is empty."))
 		return

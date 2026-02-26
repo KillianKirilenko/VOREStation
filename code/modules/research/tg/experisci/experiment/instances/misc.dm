@@ -1,3 +1,4 @@
+
 /datum/experiment/scanning/random/janitor_trash
 	name = "Station Hygiene Inspection"
 	description = "To learn how to clean, we must first learn what it is to have filth. We need you to scan some filth around the station."

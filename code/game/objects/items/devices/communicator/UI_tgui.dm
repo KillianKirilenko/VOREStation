@@ -4,10 +4,10 @@
 	var/turf/last_camera_turf
 	// Stuff needed to render the map
 	var/map_name
-	var/obj/screen/map_view/cam_screen
+	var/atom/movable/screen/map_view/cam_screen
 	var/list/cam_plane_masters
-	var/obj/screen/background/cam_background
-	var/obj/screen/skybox/local_skybox
+	var/atom/movable/screen/background/cam_background
+	var/atom/movable/screen/skybox/local_skybox
 
 // Proc: setup_tgui_camera()
 // Parameters: None
@@ -24,7 +24,7 @@
 
 	cam_plane_masters = get_tgui_plane_masters()
 
-	for(var/obj/screen/instance as anything in cam_plane_masters)
+	for(var/atom/movable/screen/instance as anything in cam_plane_masters)
 		instance.assigned_map = map_name
 		instance.del_on_map_removal = FALSE
 		instance.screen_loc = "[map_name]:CENTER"
@@ -155,7 +155,7 @@
 	for(var/mob/observer/dead/O in known_devices)
 		if(O.client && O.client.prefs.communicator_visibility == 1 && O.exonet)
 			communicators.Add(list(list(
-				"name" = sanitize("[O.client.prefs.real_name]'s communicator"),
+				"name" = sanitize("[O.client.prefs.read_preference(/datum/preference/name/real_name)]'s communicator"),
 				"address" = O.exonet.address,
 				"ref" = "\ref[O]"
 			)))
@@ -173,7 +173,7 @@
 	for(var/mob/observer/dead/O in voice_invites)
 		if(O.exonet && O.client)
 			invites.Add(list(list(
-				"name" = sanitize("[O.client.prefs.real_name]'s communicator"),
+				"name" = sanitize("[O.client.prefs.read_preference(/datum/preference/name/real_name)]'s communicator"),
 				"address" = O.exonet.address,
 				"ref" = "\ref[O]"
 			)))
@@ -191,7 +191,7 @@
 	for(var/mob/observer/dead/O in voice_requests)
 		if(O.exonet && O.client)
 			requests.Add(list(list(
-				"name" = sanitize("[O.client.prefs.real_name]'s communicator"),
+				"name" = sanitize("[O.client.prefs.read_preference(/datum/preference/name/real_name)]'s communicator"),
 				"address" = O.exonet.address,
 				"ref" = "\ref[O]"
 			)))

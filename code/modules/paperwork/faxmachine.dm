@@ -36,8 +36,6 @@ GLOBAL_LIST_EMPTY(adminfaxes)	//cache for faxes that have been sent to admins
 		GLOB.alldepartments |= department
 
 /obj/machinery/photocopier/faxmachine/attack_hand(mob/user as mob)
-	user.set_machine(src)
-
 	tgui_interact(user)
 
 /obj/machinery/photocopier/faxmachine/verb/remove_card()
@@ -439,14 +437,6 @@ Extracted to its own procedure for easier logic handling with paper bundles.
 	if(length(summary) > webhook_length_limit)
 		summary = copytext(summary, 1, webhook_length_limit + 1)
 		summary += "\n\[Truncated\]"
-
-	SSwebhooks.send(
-		WEBHOOK_FAX_SENT,
-		list(
-			"name" = "[faxname] '[sent.name]' sent from [key_name(sender)]",
-			"body" = summary
-		)
-	)
 
 /*
 								#####						####

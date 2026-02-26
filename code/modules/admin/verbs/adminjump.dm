@@ -15,20 +15,25 @@
 		tgui_alert_async(usr, "Admin jumping disabled")
 		return
 
-	var/area/A
+	var/area/target_area
 
 	if(areaname)
-		A = return_sorted_areas()[areaname]
+		target_area = return_sorted_areas()[areaname]
 	else
-		A = return_sorted_areas()[tgui_input_list(usr, "Pick an area:", "Jump to Area", return_sorted_areas())]
+		target_area = return_sorted_areas()[tgui_input_list(src, "Pick an area:", "Jump to Area", return_sorted_areas())]
 
-	if(!A)
+	if(!target_area)
 		return
 
-	usr.on_mob_jump()
-	usr.forceMove(pick(get_area_turfs(A)))
-	log_admin("[key_name(usr)] jumped to [A]")
-	message_admins("[key_name_admin(usr)] jumped to [A]", 1)
+	mob.on_mob_jump()
+	mob.reset_perspective(mob)
+	var/turf/target = pick(get_area_turfs(target_area))
+	if(!target)
+		to_chat(src, span_warning("Selected area [target_area] has no turfs!"))
+		return
+	mob.forceMove(target)
+	log_admin("[key_name(src)] jumped to [target_area]")
+	message_admins("[key_name_admin(src)] jumped to [target_area]")
 	feedback_add_details("admin_verb","JA") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 /client/proc/jumptoturf(var/turf/T in world)
@@ -38,8 +43,9 @@
 		return
 	if(CONFIG_GET(flag/allow_admin_jump))
 		log_admin("[key_name(usr)] jumped to [T.x],[T.y],[T.z] in [T.loc]")
-		message_admins("[key_name_admin(usr)] jumped to [T.x],[T.y],[T.z] in [T.loc]", 1)
+		message_admins("[key_name_admin(usr)] jumped to [T.x],[T.y],[T.z] in [T.loc]")
 		usr.on_mob_jump()
+		usr.reset_perspective(usr)
 		usr.forceMove(T)
 		feedback_add_details("admin_verb","JT") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 	else
@@ -72,6 +78,7 @@
 	var/turf/T = get_turf(M)
 	if(isturf(T))
 		A.on_mob_jump()
+		A.reset_perspective(A)
 		A.forceMove(T)
 		log_admin("[key_name(usr)] jumped to [key_name(M)]")
 		message_admins("[key_name_admin(usr)] jumped to [key_name_admin(M)]", 1)
@@ -94,6 +101,7 @@
 			if(!T)
 				to_chat(usr, span_warning("Those coordinates are outside the boundaries of the map."))
 				return
+			A.reset_perspective(A)
 			A.forceMove(T)
 			feedback_add_details("admin_verb","JC") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 		message_admins("[key_name_admin(usr)] jumped to coordinates [tx], [ty], [tz]")
@@ -119,6 +127,7 @@
 		log_admin("[key_name(usr)] jumped to [key_name(M)]")
 		message_admins("[key_name_admin(usr)] jumped to [key_name_admin(M)]", 1)
 		usr.on_mob_jump()
+		usr.reset_perspective(usr)
 		usr.forceMove(get_turf(M))
 		feedback_add_details("admin_verb","JK") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 	else
@@ -142,6 +151,7 @@
 		message_admins(msg)
 		admin_ticket_log(M, msg)
 		M.on_mob_jump()
+		M.reset_perspective(M)
 		M.forceMove(get_turf(usr))
 		feedback_add_details("admin_verb","GM") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 	else
@@ -172,6 +182,7 @@
 		admin_ticket_log(M, msg)
 		if(M)
 			M.on_mob_jump()
+			M.reset_perspective(M) // Force reset to self before teleport
 			M.forceMove(get_turf(usr))
 			feedback_add_details("admin_verb","GK") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 	else
@@ -191,6 +202,7 @@
 		if(!M)
 			return
 		M.on_mob_jump()
+		M.reset_perspective(M) // Force reset to self before teleport
 		M.forceMove(pick(get_area_turfs(A)))
 		feedback_add_details("admin_verb","SMOB") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
@@ -225,6 +237,7 @@
 		if(ismob(AM))
 			var/mob/M = AM
 			M.on_mob_jump()
+			M.reset_perspective(M) // Force reset to self before teleport
 		AM.forceMove(T)
 		feedback_add_details("admin_verb", "MA") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 		message_admins("[key_name_admin(usr)] jumped [AM] to coordinates [tx], [ty], [tz]")

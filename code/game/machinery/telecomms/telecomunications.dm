@@ -185,7 +185,7 @@
 	if(traffic > 0)
 		traffic -= netspeed
 
-/obj/machinery/telecomms/emp_act(severity)
+/obj/machinery/telecomms/emp_act(severity, recursive)
 	if(prob(100/severity))
 		if(!(stat & EMPED))
 			stat |= EMPED
@@ -388,8 +388,8 @@
 	var/broadcasting = 1
 	var/receiving = 1
 
-/obj/machinery/telecomms/relay/forceMove(var/newloc)
-	. = ..(newloc)
+/obj/machinery/telecomms/relay/forceMove(atom/destination, direction, movetime)
+	. = ..(destination, direction, movetime)
 	listening_level = z
 
 /obj/machinery/telecomms/relay/receive_information(datum/signal/signal, obj/machinery/telecomms/machine_from)

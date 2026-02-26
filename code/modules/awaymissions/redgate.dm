@@ -185,6 +185,22 @@
 /area/redgate/structure/powered
 	requires_power = 0
 
+/area/redgate/structure/powered/bed1
+	name = "Bedroom 1"
+	requires_power = 0
+
+/area/redgate/structure/powered/bed2
+	name = "Bedroom 2"
+	requires_power = 0
+
+/area/redgate/structure/powered/bed3
+	name = "Bedroom 3"
+	requires_power = 0
+
+/area/redgate/structure/powered/bed4
+	name = "Bedroom 4"
+	requires_power = 0
+
 /area/redgate/lit
 	dynamic_lighting = 0
 
@@ -1533,9 +1549,9 @@
 		return
 
 	//get their uniform
-	if(istype(M.wear_suit, /obj/item/clothing/suit/redtag))
+	if(istype(M.wear_suit, /obj/item/clothing/suit/lasertag/redtag))
 		grabbing_team = "red"
-	else if(istype(M.wear_suit, /obj/item/clothing/suit/bluetag))
+	else if(istype(M.wear_suit, /obj/item/clothing/suit/lasertag/bluetag))
 		grabbing_team = "blue"
 	else
 		return	//if they're not on a team, stop!
@@ -1661,11 +1677,11 @@
 		return
 
 	//get their uniform
-	if(istype(M.wear_suit, /obj/item/clothing/suit/redtag))
+	if(istype(M.wear_suit, /obj/item/clothing/suit/lasertag/redtag))
 		grabbing_team = "red"
 		icon_state = "[initial(icon_state)]_red"
 		item_state = "[initial(icon_state)]_red"
-	else if(istype(M.wear_suit, /obj/item/clothing/suit/bluetag))
+	else if(istype(M.wear_suit, /obj/item/clothing/suit/lasertag/bluetag))
 		grabbing_team = "blue"
 		icon_state = "[initial(icon_state)]_blue"
 		item_state = "[initial(icon_state)]_blue"
@@ -1724,9 +1740,9 @@
 	. = ..()
 	var/mob/living/carbon/human/M = user
 	var/dunking_team
-	if(istype(M.wear_suit, /obj/item/clothing/suit/redtag))
+	if(istype(M.wear_suit, /obj/item/clothing/suit/lasertag/redtag))
 		dunking_team = "red"
-	else if(istype(M.wear_suit, /obj/item/clothing/suit/bluetag))
+	else if(istype(M.wear_suit, /obj/item/clothing/suit/lasertag/bluetag))
 		dunking_team = "blue"
 	else
 		return	//if they're not on a team, stop!
@@ -1759,7 +1775,7 @@
 		ball.item_state = "[initial(ball.item_state)]"
 		ball.update_icon()
 
-/obj/structure/hyperball_goal/hitby(atom/movable/source)
+/obj/structure/hyperball_goal/hitby(atom/movable/source, datum/thrownthing/throwingdatum)
 	. = ..()
 	if(!istype(source, /obj/item/laserdome_hyperball))
 		return

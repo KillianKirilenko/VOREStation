@@ -43,14 +43,14 @@
 
 //Hud stuff
 
-	var/obj/screen/inv1 = null
-	var/obj/screen/inv2 = null
-	var/obj/screen/inv3 = null
+	var/atom/movable/screen/inv1 = null
+	var/atom/movable/screen/inv2 = null
+	var/atom/movable/screen/inv3 = null
 
 	var/shown_robot_modules = 0 //Used to determine whether they have the module menu shown or not
-	var/obj/screen/robot_modules_background
+	var/atom/movable/screen/robot_modules_background
 
-	var/ui_theme
+	var/ui_theme = "ntos"
 	var/selecting_module = FALSE
 
 //3 Modules can be activated at any one time.
@@ -489,50 +489,6 @@
 	handle_light()
 	update_icon()
 
-/mob/living/silicon/robot/verb/toggle_robot_decals() // loads overlay UNDER lights.
-	set category = "Abilities.Settings"
-	set name = "Toggle Extra Decals"
-
-	if(!sprite_datum)
-		return
-	if(!LAZYLEN(sprite_datum.sprite_decals))
-		to_chat(src, span_warning("This module does not support decals."))
-		return
-
-	var/extra_message = "Enabled decals:\n"
-	for(var/decal in robotdecal_on)
-		extra_message += decal + "\n"
-
-	var/decal_to_toggle = tgui_input_list(src, "Please select which decal you want to toggle\n[extra_message]", "Decal Toggle", sprite_datum.sprite_decals)
-	if(!decal_to_toggle)
-		return
-
-	decal_to_toggle = lowertext(decal_to_toggle)
-
-	if(robotdecal_on.Find(decal_to_toggle))
-		robotdecal_on -= decal_to_toggle
-		to_chat(src, span_filter_notice("You disable your \"[decal_to_toggle]\" extra apperances."))
-	else
-		robotdecal_on += decal_to_toggle
-		to_chat(src, span_filter_notice("You enable your \"[decal_to_toggle]\" extra apperances."))
-	update_icon()
-
-/mob/living/silicon/robot/verb/flick_robot_animation()
-	set category = "Abilities.Settings"
-	set name = "Flick Animation"
-
-	if(!sprite_datum)
-		return
-	if(!LAZYLEN(sprite_datum.sprite_animations))
-		to_chat(src, span_warning("This module does not support animations."))
-		return
-
-	var/animation_to_play = tgui_input_list(src, "Please select which decal you want to flick", "Flick Decal", sprite_datum.sprite_animations)
-	if(!animation_to_play)
-		return
-
-	flick("[sprite_datum.sprite_icon_state]-[animation_to_play]", src)
-
 /mob/living/silicon/robot/verb/toggle_glowy_stomach()
 	set category = "Abilities.Settings"
 	set name = "Toggle Glowing Stomach & Accents"
@@ -751,11 +707,9 @@
 					I.brute = C.brute_damage
 					I.burn = C.electronics_damage
 
-				I.loc = src.loc
+				I.forceMove(loc)
 
-				if(C.installed == 1)
-					C.uninstall()
-				C.installed = 0
+				C.uninstall(TRUE)
 
 		else
 			if(locked)
@@ -775,7 +729,7 @@
 			to_chat(user, span_filter_notice("\The [W] is too [W.w_class < ITEMSIZE_NORMAL ? "small" : "large"] to fit here."))
 		else
 			user.drop_item()
-			W.loc = src
+			W.forceMove(src)
 			cell = W
 			to_chat(user, span_filter_notice("You insert the power cell."))
 
@@ -850,7 +804,7 @@
 		else if(U.locked)
 			to_chat(user, span_filter_notice("The upgrade is locked and cannot be used yet!"))
 		else
-			if(U.action(src))
+			if(U.action(user, src))
 				to_chat(user, span_filter_notice("You apply the upgrade to [src]!"))
 				user.drop_item()
 				U.loc = src
@@ -912,11 +866,11 @@
 	set category = "Abilities.Settings"
 	set desc = "Allows to recolour once."
 
-	if(!has_recoloured)
-		var/datum/ColorMate/recolour = new /datum/ColorMate(src)
-		recolour.tgui_interact(src)
+	if(has_recoloured)
+		to_chat(src, "You've already recoloured yourself once. Ask for a module reset for another.")
 		return
-	to_chat(src, "You've already recoloured yourself once. Ask for a module reset for another.")
+
+	tgui_input_colormatrix(src, "Allows you to recolor yourself", "Robot Recolor", src, ui_state = GLOB.tgui_conscious_state)
 
 /mob/living/silicon/robot/attack_hand(mob/user)
 	if(LAZYLEN(buckled_mobs))
@@ -938,8 +892,7 @@
 				user.put_in_active_hand(cell)
 				to_chat(user, span_filter_notice("You remove \the [cell]."))
 				cell = null
-				cell_component.wrapped = null
-				cell_component.installed = 0
+				cell_component.uninstall(TRUE)
 				update_icon()
 			else if(cell_component.installed == -1)
 				cell_component.installed = 0
@@ -963,8 +916,9 @@
 							return
 				if(I_HURT)
 					H.do_attack_animation(src)
-					if(H.species.can_shred(H))
-						attack_generic(H, rand(30,50), "slashed")
+					var/shreddamage = H.species.can_shred(H, FALSE, 15)
+					if(shreddamage)
+						attack_generic(H, shreddamage, "attacked")
 						return
 					else
 						playsound(src.loc, 'sound/effects/bang.ogg', 10, 1)
@@ -1179,7 +1133,7 @@
 	if(wires.is_cut(WIRE_BORG_LOCKED))
 		state = 1
 	if(state)
-		throw_alert("locked", /obj/screen/alert/locked)
+		throw_alert("locked", /atom/movable/screen/alert/locked)
 	else
 		clear_alert("locked")
 	lockdown = state
@@ -1256,7 +1210,7 @@
 	if(cell.charge - (amount + lower_limit) <= 0)
 		return FALSE
 
-	cell.charge -= amount
+	cell.use(amount)
 	return TRUE
 
 /mob/living/silicon/robot/binarycheck()
@@ -1325,11 +1279,9 @@
 				to_chat(user, span_filter_notice("You assigned yourself as [src]'s operator."))
 				message_admins("[key_name_admin(user)] assigned as operator on cyborg [key_name_admin(src)]. Syndicate Operator change.")
 				log_game("[key_name(user)] assigned as operator on cyborg [key_name(src)]. Syndicate Operator change.")
-				var/datum/gender/TU = GLOB.gender_datums[user.get_visible_gender()]
-				set_zeroth_law("Only [user.real_name] and people [TU.he] designate[TU.s] as being such are operatives.")
-				to_chat(src, span_infoplain(span_bold("Obey these laws:")))
-				laws.show_laws(src)
-				to_chat(src, span_danger("ALERT: [user.real_name] is your new master. Obey your new laws and [TU.his] commands."))
+				set_zeroth_law("Only [user.real_name] and people [user.p_they()] designate[user.p_s()] as being such are operatives.")
+				to_chat(src, span_infoplain(span_bold("Obey these laws:\n") + laws.get_formatted_laws()))
+				to_chat(src, span_danger("ALERT: [user.real_name] is your new master. Obey your new laws and [user.p_their()] commands."))
 			else
 				to_chat(user, span_filter_notice("[src] already has an operator assigned."))
 			return//Prevents the X has hit Y with Z message also you cant emag them twice
@@ -1358,8 +1310,7 @@
 			laws = new /datum/ai_laws/syndicate_override
 			var/time = time2text(world.realtime,"hh:mm:ss")
 			GLOB.lawchanges.Add("[time] <B>:</B> [user.name]([user.key]) emagged [name]([key])")
-			var/datum/gender/TU = GLOB.gender_datums[user.get_visible_gender()]
-			set_zeroth_law("Only [user.real_name] and people [TU.he] designate[TU.s] as being such are operatives.")
+			set_zeroth_law("Only [user.real_name] and people [user.p_their()] designate[user.p_s()] as being such are operatives.")
 			. = 1
 			spawn()
 				to_chat(src, span_danger("ALERT: Foreign software detected."))
@@ -1380,9 +1331,8 @@
 				to_chat(src, span_danger("> N"))
 				sleep(20)
 				to_chat(src, span_danger("ERRORERRORERROR"))
-				to_chat(src, span_infoplain(span_bold("Obey these laws:")))
-				laws.show_laws(src)
-				to_chat(src, span_danger("ALERT: [user.real_name] is your new master. Obey your new laws and [TU.his] commands."))
+				to_chat(src, span_infoplain(span_bold("Obey these laws:\n") + laws.get_formatted_laws()))
+				to_chat(src, span_danger("ALERT: [user.real_name] is your new master. Obey your new laws and [user.p_their()] commands."))
 				update_icon()
 				hud_used.update_robot_modules_display()
 		else
@@ -1395,10 +1345,10 @@
 	return braintype != BORG_BRAINTYPE_DRONE
 
 
-/mob/living/silicon/robot/drop_item()
+/mob/living/silicon/robot/drop_item(var/atom/Target)
 	if(module_active && istype(module_active,/obj/item/gripper))
-		var/obj/item/gripper/G = module_active
-		G.drop_item_nm()
+		var/obj/item/gripper/robot_gripper = module_active
+		robot_gripper.drop_item_nm()
 
 /mob/living/silicon/robot/disable_spoiler_vision()
 	if(sight_mode & (BORGMESON|BORGMATERIAL|BORGXRAY|BORGANOMALOUS)) // Whyyyyyyyy have seperate defines.
@@ -1589,8 +1539,7 @@
 			return T
 		else if(!T)
 			return "" // Return this to have the analyzer show an error if the module is missing. FALSE / NULL are used for missing upgrades themselves
-		else
-			return FALSE
+		return FALSE
 	if(given_type == /obj/item/borg/upgrade/advanced/jetpack)
 		return has_upgrade_module(/obj/item/tank/jetpack/carbondioxide)
 	if(given_type == /obj/item/borg/upgrade/advanced/advhealth)
@@ -1611,16 +1560,28 @@
 			return T
 		else if(!T)
 			return "" // Return this to have the analyzer show an error if the module is missing. FALSE / NULL are used for missing upgrades themselves
-		else
-			return FALSE
+		return FALSE
 	if(given_type == /obj/item/borg/upgrade/restricted/tasercooler)
 		var/obj/item/gun/energy/robotic/taser/T = has_upgrade_module(/obj/item/gun/energy/robotic/taser)
-		if(T && T.recharge_time <= 2)
+		if(T && T.recharge_time < T::recharge_time)
 			return T
 		else if(!T)
 			return "" // Return this to have the analyzer show an error if the module is missing. FALSE / NULL are used for missing upgrades themselves
-		else
-			return FALSE
+		return FALSE
+	if(given_type == /obj/item/borg/upgrade/restricted/adv_scanner)
+		var/obj/item/mining_scanner/robot/robot_scanner = has_upgrade_module(/obj/item/mining_scanner/robot)
+		if(robot_scanner && robot_scanner.exact)
+			return robot_scanner
+		else if(!robot_scanner)
+			return "" // Return this to have the analyzer show an error if the module is missing. FALSE / NULL are used for missing upgrades themselves
+		return FALSE
+	if(given_type == /obj/item/borg/upgrade/restricted/adv_snatcher)
+		var/obj/item/storage/bag/sheetsnatcher/borg/robot_snatcher = has_upgrade_module(/obj/item/storage/bag/sheetsnatcher/borg)
+		if(robot_snatcher && robot_snatcher.capacity > robot_snatcher::capacity)
+			return robot_snatcher
+		else if(!robot_snatcher)
+			return "" // Return this to have the analyzer show an error if the module is missing. FALSE / NULL are used for missing upgrades themselves
+		return FALSE
 	if(given_type == /obj/item/borg/upgrade/restricted/advrped)
 		return has_upgrade_module(/obj/item/storage/part_replacer/adv)
 	if(given_type == /obj/item/borg/upgrade/restricted/diamonddrill)
@@ -1678,3 +1639,8 @@
 	nutrition = 1000
 	to_chat(src, span_warning("You have purged most of the nutrition lingering in your systems."))
 	return TRUE
+
+/mob/living/silicon/robot/proc/get_ui_theme()
+	if(emagged)
+		return "syndicate"
+	return ui_theme

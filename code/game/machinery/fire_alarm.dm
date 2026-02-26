@@ -110,7 +110,7 @@ FIRE ALARM
 /obj/machinery/firealarm/bullet_act()
 	return alarm()
 
-/obj/machinery/firealarm/emp_act(severity)
+/obj/machinery/firealarm/emp_act(severity, recursive)
 	if(prob(50 / severity))
 		alarm(rand(30 / severity, 60 / severity))
 	..()
@@ -150,7 +150,7 @@ FIRE ALARM
 		updateDialog()
 	last_process = world.timeofday
 
-	if(locate(/obj/fire) in src.loc)
+	if(detecting && (locate(/obj/fire) in loc))
 		alarm()
 
 	return
@@ -176,7 +176,7 @@ FIRE ALARM
 		return
 	var/area/area = get_area(src)
 	for(var/obj/machinery/firealarm/FA in area)
-		fire_alarm.clearAlarm(src.loc, FA)
+		GLOB.fire_alarm.clearAlarm(src.loc, FA)
 	update_icon()
 	if(user)
 		log_game("[user] reset a fire alarm at [COORD(src)]")
@@ -186,7 +186,7 @@ FIRE ALARM
 		return
 	var/area/area = get_area(src)
 	for(var/obj/machinery/firealarm/FA in area)
-		fire_alarm.triggerAlarm(loc, FA, duration, hidden = alarms_hidden)
+		GLOB.fire_alarm.triggerAlarm(loc, FA, duration, hidden = alarms_hidden)
 	update_icon()
 	playsound(src, 'sound/machines/airalarm.ogg', 25, 0, 4, volume_channel = VOLUME_CHANNEL_ALARMS)
 	if(user)
@@ -228,7 +228,7 @@ Just a object used in constructing fire alarms
 	if(user.stat || stat & (NOPOWER|BROKEN))
 		return
 
-	user.machine = src
+	user.set_machine(src)
 	var/area/A = get_area(src)
 	ASSERT(isarea(A))
 	var/d1
@@ -285,7 +285,7 @@ Just a object used in constructing fire alarms
 	if(usr.stat || stat & (BROKEN|NOPOWER))
 		return
 	if((usr.contents.Find(src) || ((get_dist(src, usr) <= 1) && istype(loc, /turf))) || (isAI(usr)))
-		usr.machine = src
+		usr.set_machine(src)
 		if(href_list["reset"])
 			reset()
 		else if(href_list["alarm"])

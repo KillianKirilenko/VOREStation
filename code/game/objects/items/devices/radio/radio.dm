@@ -44,6 +44,11 @@
 	var/datum/radio_frequency/radio_connection
 	var/list/datum/radio_frequency/secure_radio_connections
 
+	///If we're a syndicate beacon or not.
+	var/beacon = FALSE
+	var/electric_pack = FALSE
+	var/uplink = FALSE
+
 /obj/item/radio/proc/set_frequency(new_frequency)
 	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
@@ -115,8 +120,12 @@
 /obj/item/radio/proc/recalculateChannels()
 	return
 
-/obj/item/radio/attack_self(mob/user as mob)
-	user.set_machine(src)
+/obj/item/radio/attack_self(mob/user)
+	. = ..(user)
+	if(.)
+		return TRUE
+	if(beacon || electric_pack || uplink)
+		return
 	interact(user)
 
 /obj/item/radio/interact(mob/user)
@@ -134,8 +143,14 @@
 		ui = new(user, src, "Radio", name, parent_ui)
 		ui.open()
 
+/obj/item/radio/tgui_static_data(mob/user)
+	. = ..()
+	if(isrobot(loc))
+		var/mob/living/silicon/robot/robot_owner = loc
+		.["theme"] = robot_owner.get_ui_theme()
+
 /obj/item/radio/tgui_data(mob/user)
-	var/data[0]
+	var/data = list()
 
 	data["rawfreq"] = frequency
 	data["listening"] = listening
@@ -154,7 +169,10 @@
 		data["chan_list"] = null
 
 	if(syndie)
-		data["useSyndMode"] = 1
+		data["useSyndMode"] = TRUE
+	else
+		data["useSyndMode"] = FALSE
+
 
 	data["minFrequency"] = PUBLIC_LOW_FREQ
 	data["maxFrequency"] = PUBLIC_HIGH_FREQ
@@ -548,10 +566,10 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 		var/pos_z = get_z(src)
 		if(!(pos_z in level))
 			return -1
-	if(freq in ANTAG_FREQS)
+	if(freq in GLOB.antag_frequencies)
 		if(!(src.syndie))//Checks to see if it's allowed on that frequency, based on the encryption keys
 			return -1
-	if(freq in CENT_FREQS)
+	if(freq in GLOB.cent_frequencies)
 		if(!(src.centComm))//Checks to see if it's allowed on that frequency, based on the encryption keys
 			return -1
 	if (!on)
@@ -588,7 +606,6 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 
 /obj/item/radio/attackby(obj/item/W as obj, mob/user as mob)
 	..()
-	user.set_machine(src)
 	if (!W.has_tool_quality(TOOL_SCREWDRIVER))
 		return
 	b_stat = !( b_stat )
@@ -603,9 +620,9 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 		return
 	else return
 
-/obj/item/radio/emp_act(severity)
-	broadcasting = 0
-	listening = 0
+/obj/item/radio/emp_act(severity, recursive)
+	broadcasting = FALSE
+	listening = FALSE
 	for (var/ch_name in channels)
 		channels[ch_name] = 0
 	..()
@@ -643,7 +660,6 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 
 /obj/item/radio/borg/attackby(obj/item/W as obj, mob/user as mob)
 //	..()
-	user.set_machine(src)
 	if (!(W.has_tool_quality(TOOL_SCREWDRIVER) || istype(W, /obj/item/encryptionkey)))
 		return
 
@@ -785,8 +801,8 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 				continue
 	broadcast_tiles = output
 
-/obj/item/radio/intercom/forceMove(atom/destination)
-	. = ..()
+/obj/item/radio/intercom/forceMove(atom/destination, direction, movetime)
+	. = ..(destination, direction, movetime)
 	update_broadcast_tiles()
 
 /obj/item/radio/intercom/Initialize(mapload)
@@ -814,7 +830,7 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 //* Bluespace Radio *//
 /obj/item/bluespaceradio/southerncross_prelinked
 	name = "bluespace radio (southerncross)"
-	handset = /obj/item/radio/bluespacehandset/linked/southerncross_prelinked
+	handset_path = /obj/item/radio/bluespacehandset/linked/southerncross_prelinked
 
 /obj/item/radio/bluespacehandset/linked/southerncross_prelinked
 	bs_tx_preload_id = "Receiver A" //Transmit to a receiver
@@ -840,7 +856,7 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 
 /obj/item/bluespaceradio/tether_prelinked
 	name = "bluespace radio (tether)"
-	handset = /obj/item/radio/bluespacehandset/linked/tether_prelinked
+	handset_path = /obj/item/radio/bluespacehandset/linked/tether_prelinked
 
 /obj/item/radio/bluespacehandset/linked/tether_prelinked
 	bs_tx_preload_id = "tether_rx" //Transmit to a receiver
@@ -848,7 +864,7 @@ GLOBAL_DATUM(autospeaker, /mob/living/silicon/ai/announcer)
 
 /obj/item/bluespaceradio/talon_prelinked
 	name = "bluespace radio (talon)"
-	handset = /obj/item/radio/bluespacehandset/linked/talon_prelinked
+	handset_path = /obj/item/radio/bluespacehandset/linked/talon_prelinked
 
 /obj/item/radio/bluespacehandset/linked/talon_prelinked
 	bs_tx_preload_id = "talon_aio" //Transmit to a receiver
