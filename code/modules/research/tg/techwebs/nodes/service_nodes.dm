@@ -28,6 +28,7 @@
 		// "earmuffs",
 		"taperecorder",
 		"recordingcassette",
+		"cargo_scanner",
 		// "toy_balloon",
 		// "pet_carrier",
 		// "chisel",
@@ -64,6 +65,7 @@
 		"beartrap",
 		"barbedwire",
 		"snarewire",
+		"springtrap",
 		// "buffer",
 		"washing"
 	)
@@ -277,7 +279,8 @@
 		"cerealmaker_board",
 		"candymachine_board",
 		"honey_extractor",
-		// "food_replicator",
+		"food_synthesizer",
+		"compactfood_synthesizer",
 		"borgos1",
 		"range",
 		// "souppot",
